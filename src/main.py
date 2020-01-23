@@ -8,4 +8,4 @@ args = parser.parse_args()
 train_data = TrainDataLoader(args.train_data)
 
 with train_data as data:
-    print(train_data)
+    print(data.head())
