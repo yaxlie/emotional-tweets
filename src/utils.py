@@ -7,7 +7,8 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Batch():
-     def __init__(self, features, labels):
+     def __init__(self, ids, features, labels):
+        self.ids = ids
         self.features = features
         self.labels = labels
 
@@ -17,28 +18,35 @@ class BatchLoader():
     Inspired by https://stackabuse.com/python-for-nlp-sentiment-analysis-with-scikit-learn/
     """
 
-    def __init__(self, path, normalize=True):
+    def __init__(self, path, vectorizer=None, has_labels=True):
         self.path = path
-        self.normalize = normalize # TODO: inheritance
+        self.vectorizer = vectorizer # TODO: inheritance
+        self.has_labels = has_labels
         self.batch = None
 
     def __enter__(self):
         data = None
+        labels = None
+
         try:
             data = pd.read_csv(self.path)
-            print("Train data loaded.")
+            print("Data loaded.")
         except Exception as e:
-            print("Train data could not be loaded: {}".format(e))
+            print("Data could not be loaded: {}".format(e))
 
         if data is not None:
-            features = data.iloc[:, 2].values
-            labels = data.iloc[:, 1].values
+            ids = data.iloc[:, 0].values
 
-        self.batch = Batch(features, labels)
+            if self.has_labels:
+                features = data.iloc[:, 2].values
+                labels = data.iloc[:, 1].values
+            else:
+                features = data.iloc[:, 1].values
 
-        if self.normalize:
-            self.__normalize_features()
-            self.__convert_features()
+        self.batch = Batch(ids, features, labels)
+
+        self.__normalize_features()
+        self.__convert_features()
 
         return self.batch
         
@@ -53,6 +61,9 @@ class BatchLoader():
 
             # Remove all links
             processed_feature = re.sub(r'http[^\s]+', ' ', processed_feature)
+
+            # Remove all mentions
+            processed_feature = re.sub(r'@[^\s]+', ' ', processed_feature)
 
             # Remove all the special characters
             processed_feature = re.sub(r'\W', ' ', processed_feature)
@@ -83,5 +94,8 @@ class BatchLoader():
         """
         nltk.download('stopwords')
 
-        vectorizer = TfidfVectorizer (max_features=2500, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
-        self.batch.features = vectorizer.fit_transform(self.batch.features).toarray()
+        if self.vectorizer:
+            self.batch.features = self.vectorizer.transform(self.batch.features).toarray()
+        else:
+            vectorizer = TfidfVectorizer (max_features=2500, stop_words=stopwords.words('english'))
+            self.batch.features = vectorizer.fit_transform(self.batch.features).toarray()

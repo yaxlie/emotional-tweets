@@ -1,8 +1,8 @@
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from utils import BatchLoader
 
-def test(model, data):
-    batch_loader = BatchLoader(data)
+def test(model, vectorizer, data):
+    batch_loader = BatchLoader(data, vectorizer, False)
     with batch_loader as batch:
         predictions = model.predict(batch.features)
 
