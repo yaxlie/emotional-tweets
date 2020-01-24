@@ -17,8 +17,9 @@ class BatchLoader():
     Inspired by https://stackabuse.com/python-for-nlp-sentiment-analysis-with-scikit-learn/
     """
 
-    def __init__(self, path):
+    def __init__(self, path, normalize=True):
         self.path = path
+        self.normalize = normalize # TODO: inheritance
         self.batch = None
 
     def __enter__(self):
@@ -35,8 +36,9 @@ class BatchLoader():
 
         self.batch = Batch(features, labels)
 
-        self.__normalize_features()
-        self.__convert_features()
+        if self.normalize:
+            self.__normalize_features()
+            self.__convert_features()
 
         return self.batch
         
