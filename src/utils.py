@@ -87,12 +87,14 @@ class BatchLoader():
 
         from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer, HashingVectorizer
 
+        # TODO: verify: this is bugged for test in training
         if self.vectorizer:
             self.batch.features = self.vectorizer.transform(self.batch.features).toarray()
         else:
             # vectorizer = CountVectorizer(max_features=5000)
-            vectorizer = TfidfVectorizer (max_features=2000, stop_words=stopwords.words('english'))
+            vectorizer = TfidfVectorizer(use_idf=True, stop_words=stopwords.words('english'))
             self.batch.features = vectorizer.fit_transform(self.batch.features).toarray()
+            self.vectorizer = vectorizer
 
 def process_text(text):
     # Remove all links

@@ -19,7 +19,7 @@ def train(data, test=False):
         print('Train...')
 
         model = RandomForestClassifier(
-            n_estimators=100, 
+            n_estimators=1000, 
             random_state=0,
             # min_samples_split=2,
             # class_weight='balanced'
@@ -49,4 +49,4 @@ def train(data, test=False):
             print(classification_report(y_test, predictions))
             print(accuracy_score(y_test, predictions))
 
-        return model, batch_loader.vectorizer
+        return (model, batch_loader.vectorizer)
