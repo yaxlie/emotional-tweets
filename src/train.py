@@ -11,27 +11,32 @@ def train(data, test=False):
         print('Preparing data...')
 
         if test:
-            X_train, X_test, y_train, y_test = train_test_split(batch.features, batch.labels, test_size=0.2, random_state=0)
+            X_train, X_test, y_train, y_test = train_test_split(batch.features, batch.labels, test_size=0.2, random_state=1)
         else:
             X_train = batch.features
             y_train = batch.labels
 
         print('Train...')
 
-        # model = RandomForestClassifier(n_estimators=50, random_state=0)
-
-        model = MLPClassifier(
-            hidden_layer_sizes=(100,100,100), 
-            max_iter=100,
-            # n_iter_no_change=200, 
-            alpha=0.0001, 
-            activation='relu',
-            # learning_rate="adaptive",
-            solver='adam', 
-            verbose=10,  
-            random_state=21,
-            tol=0.000000001
+        model = RandomForestClassifier(
+            n_estimators=100, 
+            random_state=0,
+            # min_samples_split=2,
+            # class_weight='balanced'
         )
+
+        # model = MLPClassifier(
+        #     hidden_layer_sizes=(100,100,100), 
+        #     max_iter=100,
+        #     # n_iter_no_change=200, 
+        #     alpha=0.0001, 
+        #     activation='relu',
+        #     # learning_rate="adaptive",
+        #     solver='adam', 
+        #     verbose=10,  
+        #     random_state=21,
+        #     tol=0.000000001
+        # )
 
         model.fit(X_train, y_train)
 

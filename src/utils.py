@@ -4,12 +4,12 @@ import nltk
 import re
 from collections import namedtuple
 from nltk.corpus import stopwords
-from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.stem import WordNetLemmatizer 
 
 
 nltk.download('wordnet')
 nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
 
 class Batch():
      def __init__(self, ids, features, labels):
@@ -23,10 +23,11 @@ class BatchLoader():
     Inspired by https://stackabuse.com/python-for-nlp-sentiment-analysis-with-scikit-learn/
     """
 
-    def __init__(self, path, vectorizer=None, has_labels=True):
+    def __init__(self, path, vectorizer=None, has_labels=True, clean=True):
         self.path = path
         self.vectorizer = vectorizer # TODO: inheritance
         self.has_labels = has_labels
+        self.clean = clean
         self.batch = None
 
     def __enter__(self):
@@ -36,9 +37,15 @@ class BatchLoader():
         try:
             data = pd.read_csv(self.path)
 
-            # Files can be corrupted - clean it
-            data['Id']=pd.to_numeric(data['Id'],errors='coerce')
-            data.dropna(inplace=True)
+            if self.clean:
+                # Files can be corrupted - clean it
+                data['Id']=pd.to_numeric(data['Id'],errors='coerce')
+                data.dropna(inplace=True)
+                data=data[data.Tweet.str.contains("Not Available") == False]
+
+                # balance data
+                # data = data.groupby('Category')
+                # data = data.apply(lambda x: x.sample(data.size().min()).reset_index(drop=True))
 
             print("Data loaded.")
         except Exception as e:
@@ -64,41 +71,13 @@ class BatchLoader():
         pass
     
     def __normalize_features(self):
-        processed_features = []
+        texts = []
 
         for sentence in range(0, len(self.batch.features)):
-            processed_feature = str(self.batch.features[sentence])
+            text = str(self.batch.features[sentence])
+            texts.append(process_text(text))
 
-            # Remove all links
-            processed_feature = re.sub(r'http[^\s]+', ' ', processed_feature)
-
-            # Remove all mentions
-            processed_feature = re.sub(r'@[^\s]+', ' ', processed_feature)
-
-            # Remove all the special characters
-            # processed_feature = re.sub(r'\W', ' ', processed_feature)
-
-            # remove all single characters
-            processed_feature= re.sub(r'\s+[a-zA-Z]\s+', ' ', processed_feature)
-
-            # Remove single characters from the start
-            processed_feature = re.sub(r'\^[a-zA-Z]\s+', ' ', processed_feature) 
-
-            # Substituting multiple spaces with single space
-            processed_feature = re.sub(r'\s+', ' ', processed_feature, flags=re.I)
-
-            # Removing prefixed 'b'
-            processed_feature = re.sub(r'^b\s+', '', processed_feature)
-
-            processed_feature = lemmatize_text(processed_feature)
-            processed_feature = simple_stemmer(processed_feature)
-
-            # Converting to Lowercase
-            # processed_feature = processed_feature.lower()
-
-            processed_features.append(processed_feature)
-
-        self.batch.features = processed_features
+        self.batch.features = texts
 
     def __convert_features(self):
         """
@@ -106,11 +85,60 @@ class BatchLoader():
         Therefore use TF-IDF notation
         """
 
+        from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer, HashingVectorizer
+
         if self.vectorizer:
             self.batch.features = self.vectorizer.transform(self.batch.features).toarray()
         else:
-            vectorizer = TfidfVectorizer (max_features=2500, stop_words=stopwords.words('english'), )
+            # vectorizer = CountVectorizer(max_features=5000)
+            vectorizer = TfidfVectorizer (max_features=2000, stop_words=stopwords.words('english'))
             self.batch.features = vectorizer.fit_transform(self.batch.features).toarray()
+
+def process_text(text):
+    # Remove all links
+    text = preprocess_text(text)
+
+    text = lemmatize_text(text)
+    # text = simple_stemmer(text)
+
+    text = tokenize(text)
+
+    return text
+
+def preprocess_text(text):
+    text = re.sub(r'http[^\s]+', ' ', text)
+
+    # Remove all mentions
+    text = re.sub(r'@[^\s]+', ' ', text)
+
+    # # Remove all the special characters
+    # text = re.sub(r'\W', ' ', text)
+
+    # # remove all single characters
+    # text= re.sub(r'\s+[a-zA-Z]\s+', ' ', text)
+
+    # # Remove single characters from the start
+    # text = re.sub(r'\^[a-zA-Z]\s+', ' ', text) 
+
+    # Substituting multiple spaces with single space
+    text = re.sub(r'\s+', ' ', text, flags=re.I)
+
+    # # Removing prefixed 'b'
+    # text = re.sub(r'^b\s+', '', text)
+
+    # Converting to Lowercase
+    text = text.lower()
+
+    return text
+
+def tokenize(text):
+    # text = word_tokenize(text)
+    text = nltk.pos_tag(text.split())
+
+    # see https://pythonprogramming.net/natural-language-toolkit-nltk-part-speech-tagging/ VBD
+    text = [word[0] for word in text if word[1] in ['JJ', 'JJR', 'JJS', 'MD', 'RB', 'RBR', 'RBS', 'RP', 'UH', 'VBG']]
+    return ' '.join(text)
+    # only (RB)adverbs and (JJ)adjectives and VBP NN
 
 def lemmatize_text(text):
     lemmatizer = WordNetLemmatizer()
