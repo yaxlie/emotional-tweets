@@ -1,5 +1,6 @@
 from utils import BatchLoader
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
@@ -16,16 +17,27 @@ def train(data, test=False):
             y_train = batch.labels
 
         print('Train...')
-        text_classifier = RandomForestClassifier(n_estimators=10, random_state=0)
-        text_classifier.fit(X_train, y_train)
+        model = MLPClassifier(
+            hidden_layer_sizes=(100,100,100), 
+            max_iter=100, 
+            alpha=0.0001, 
+            activation='relu',
+            # learning_rate="adaptive",
+            solver='adam', 
+            verbose=10,  
+            random_state=21,
+            tol=0.000000001
+        )
+
+        model.fit(X_train, y_train)
 
         print('Training finished!')
 
         if test:
-            predictions = text_classifier.predict(X_test)
+            predictions = model.predict(X_test)
 
             print(confusion_matrix(y_test, predictions))
             print(classification_report(y_test, predictions))
             print(accuracy_score(y_test, predictions))
 
-        return text_classifier, batch_loader.vectorizer
+        return model, batch_loader.vectorizer
