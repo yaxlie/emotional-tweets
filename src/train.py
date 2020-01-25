@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 
-def train(data, test=False):
+def train(data, test=False, n_estimators=100):
     batch_loader = BatchLoader(data)
     with batch_loader as batch:
         print('Preparing data...')
@@ -19,10 +19,10 @@ def train(data, test=False):
         print('Train...')
 
         model = RandomForestClassifier(
-            n_estimators=1000, 
+            n_estimators=n_estimators, 
             random_state=0,
             # min_samples_split=2,
-            # class_weight='balanced'
+            class_weight='balanced'
         )
 
         # model = MLPClassifier(
