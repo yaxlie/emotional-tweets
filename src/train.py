@@ -17,9 +17,13 @@ def train(data, test=False):
             y_train = batch.labels
 
         print('Train...')
+
+        # model = RandomForestClassifier(n_estimators=50, random_state=0)
+
         model = MLPClassifier(
             hidden_layer_sizes=(100,100,100), 
-            max_iter=100, 
+            max_iter=100,
+            # n_iter_no_change=200, 
             alpha=0.0001, 
             activation='relu',
             # learning_rate="adaptive",

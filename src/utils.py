@@ -5,6 +5,11 @@ import re
 from collections import namedtuple
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.stem import WordNetLemmatizer 
+
+
+nltk.download('wordnet')
+nltk.download('stopwords')
 
 class Batch():
      def __init__(self, ids, features, labels):
@@ -71,7 +76,7 @@ class BatchLoader():
             processed_feature = re.sub(r'@[^\s]+', ' ', processed_feature)
 
             # Remove all the special characters
-            processed_feature = re.sub(r'\W', ' ', processed_feature)
+            # processed_feature = re.sub(r'\W', ' ', processed_feature)
 
             # remove all single characters
             processed_feature= re.sub(r'\s+[a-zA-Z]\s+', ' ', processed_feature)
@@ -85,8 +90,11 @@ class BatchLoader():
             # Removing prefixed 'b'
             processed_feature = re.sub(r'^b\s+', '', processed_feature)
 
+            processed_feature = lemmatize_text(processed_feature)
+            processed_feature = simple_stemmer(processed_feature)
+
             # Converting to Lowercase
-            processed_feature = processed_feature.lower()
+            # processed_feature = processed_feature.lower()
 
             processed_features.append(processed_feature)
 
@@ -97,10 +105,18 @@ class BatchLoader():
         Sentences have to be written in math.
         Therefore use TF-IDF notation
         """
-        nltk.download('stopwords')
 
         if self.vectorizer:
             self.batch.features = self.vectorizer.transform(self.batch.features).toarray()
         else:
-            vectorizer = TfidfVectorizer (max_features=2500, stop_words=stopwords.words('english'))
+            vectorizer = TfidfVectorizer (max_features=2500, stop_words=stopwords.words('english'), )
             self.batch.features = vectorizer.fit_transform(self.batch.features).toarray()
+
+def lemmatize_text(text):
+    lemmatizer = WordNetLemmatizer()
+    return lemmatizer.lemmatize(text)
+
+def simple_stemmer(text):
+    ps = nltk.porter.PorterStemmer()
+    text = ' '.join([ps.stem(word) for word in text.split()])
+    return text
