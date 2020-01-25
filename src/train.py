@@ -9,7 +9,7 @@ def train(data):
         print('Preparing data...')
 
         print('Train...')
-        text_classifier = RandomForestClassifier(n_estimators=5, random_state=0)
+        text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
         text_classifier.fit(batch.features, batch.labels)
 
         print('Training finished!')

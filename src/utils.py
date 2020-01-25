@@ -30,6 +30,11 @@ class BatchLoader():
 
         try:
             data = pd.read_csv(self.path)
+
+            # Files can be corrupted - clean it
+            data['Id']=pd.to_numeric(data['Id'],errors='coerce')
+            data.dropna(inplace=True)
+
             print("Data loaded.")
         except Exception as e:
             print("Data could not be loaded: {}".format(e))
